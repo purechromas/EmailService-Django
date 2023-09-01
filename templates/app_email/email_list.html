@@ -1,0 +1,46 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+    <div class="container-fluid py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6 text-center">
+                <a href="{% url 'email:create' %}" class="btn btn-danger text-white">
+                    Add Mailing</a>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            {% for mail in object_list %}
+                <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                    <div class="card {% cycle 'bg-danger' 'bg-secondary' as color %} text-white shadow">
+                        <div class="card-header text-center"><h5>{{ mail.subject }}</h5></div>
+                        <div class="card-body">
+                            <p>{{ mail.message|truncatechars:35 }}</p>
+                            <p class="card-text">Sent to:
+                                {% for client in mail.send_to_client.all|slice:":2" %}
+                                    {{ client.full_name}}{% if not forloop.last %}, {% endif %}{% if forloop.last %}..{% endif %}
+                                {% endfor %}
+                            </p>
+                            <p class="card-text">Send Time: {{ mail.send_time }}</p>
+                            <p class="card-text">Send Day: {{ mail.send_day }}</p>
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <p class="mb-0">Frequency: {{ mail.frequency }}</p>
+                                <div>
+                                    <a href="{% url 'email:update' mail.id %}"
+                                       class="btn btn-sm {% if color == 'bg-danger' %}btn-secondary{% else %}btn-danger{% endif %} text-white">Edit</a>
+                                    <a href="{% url 'email:delete' mail.id %}"
+                                       class="btn btn-sm ms-1 {% if color == 'bg-danger' %}btn-secondary{% else %}btn-danger{% endif %} text-white">Delete</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent border-0"></div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock content %}
+
+
+
