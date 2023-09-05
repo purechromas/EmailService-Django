@@ -1,3 +1,4 @@
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView, DeleteView, UpdateView
 
@@ -5,16 +6,17 @@ from app_client.forms import ClientForm
 from app_client.models import Client
 
 
-class ClientListView(ListView):
+class ClientListView(LoginRequiredMixin, ListView):
     model = Client
     template_name = 'app_client/client_list.html'
 
     def get_queryset(self):
-        clients = Client.objects.filter(user=self.request.user)
-        return clients
+        if self.request.user.is_superuser or self.request.user.groups.filter(name='manager').exists():
+            return Client.objects.all()
+        return Client.objects.filter(user=self.request.user)
 
 
-class ClientCrateView(CreateView):
+class ClientCrateView(LoginRequiredMixin, CreateView):
     model = Client
     form_class = ClientForm
     template_name = 'app_client/client_form.html'
@@ -26,14 +28,26 @@ class ClientCrateView(CreateView):
         return super().form_valid(form)
 
 
-class ClientUpdateView(UpdateView):
+class ClientUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Client
     form_class = ClientForm
     template_name = 'app_client/client_form.html'
     success_url = reverse_lazy('client:list')
+    permission_required = []
+
+    def has_permission(self):
+        client = self.get_object()
+        if self.request.user == client.user:
+            return super().has_permission()
 
 
-class ClientDeleteView(DeleteView):
+class ClientDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = Client
     template_name = 'app_client/client_confirm_delete.html'
     success_url = reverse_lazy('client:list')
+    permission_required = []
+
+    def has_permission(self):
+        email = self.get_object()
+        if self.request.user == email.user:
+            return super().has_permission()

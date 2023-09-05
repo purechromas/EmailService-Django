@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.mail import send_mail
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy, reverse
@@ -25,7 +26,7 @@ class UserRegistrationCreateView(CreateView):
 
         verification_url = self.request.build_absolute_uri(
             reverse(
-                viewname='users:verification',
+                viewname='user:verification',
                 args=[new_user.pk, verification_token])
         )
 
@@ -37,7 +38,7 @@ class UserRegistrationCreateView(CreateView):
         return super().form_valid(form)
 
 
-class UserProfileUpdateView(UpdateView):
+class UserProfileUpdateView(LoginRequiredMixin, UpdateView):
     model = User
     form_class = UserProfileForm
     template_name = 'app_user/profile_form.html'

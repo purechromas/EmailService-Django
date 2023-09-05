@@ -3,25 +3,51 @@
 {% block content %}
     <div class="container pt-5">
         <div class="row">
-            <div class="col-lg-6 col-sm-12">
-                <h2 class="mb-4">Главная страница</h2>
-                <p>Добро пожаловать на главную страницу нашего сервиса.</p>
-                <div class="card mb-4">
+            <div class="col-lg-6 col-sm-12 mb-4">
+                <div class="card shadow-lg mb-1">
+                       <div class="card-header bg-danger text-white text-center" style="padding: 0.25rem 1rem;">
+                        <h5>Информация о рассылках</h5>
+                    </div>
+                </div>
+                <div class="card shadow mb-2">
                     <div class="card-body">
-                        <h5 class="card-title">Информация о рассылках</h5>
-                        <p>Всего рассылок: {{ total_mailings }}</p>
-                        <p>Активные рассылки: {{ active_mailings }}</p>
-                        <p>Уникальные клиенты для рассылок: {{ unique_clients }}</p>
+                        Всего рассылок: {{ total_emails }}
+                    </div>
+                </div>
+                <div class="card shadow mb-2">
+                    <div class="card-body">
+                        Активные рассылки: {{ active_emails }}
+                    </div>
+                </div>
+                <div class="card shadow">
+                    <div class="card-body">
+                        Уникальные клиенты для рассылок: {{ unique_clients }}
                     </div>
                 </div>
             </div>
             <div class="col-lg-6 col-sm-12">
-                <h2 class="mb-4">Случайные статьи из блога</h2>
-                {% for article in random_articles %}
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ article.title }}</h5>
-                            <p class="card-text">{{ article.summary }}</p>
+                {% for blog in blogs %}
+                    <div class="card shadow-lg mb-1">
+                       <div class="card-header bg-danger text-white text-center" style="padding: 0.25rem 1rem;">
+                            <h5>{{ blog.title }}</h5>
+                        </div>
+                    </div>
+                    <div class="card shadow mb-2">
+                        <div class="card-body text-center">
+                            <div class="row">
+                                <div class="col-4">
+                                    <img src="{{ blog.image.url }}" alt="Not Loaded" class="centered-image img-fluid"
+                                         style="width: 150px; height: 150px; object-fit: cover;">
+                                </div>
+                                <div class="col-8">
+                                    <div class="d-flex flex-column" style="height: 100%;">
+                                        <p>{{ blog.blog }}</p>
+                                        <div class="mt-auto">
+                                            <small>{{ blog.create_datetime }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 {% endfor %}
@@ -29,3 +55,4 @@
         </div>
     </div>
 {% endblock content %}
+

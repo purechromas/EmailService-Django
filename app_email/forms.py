@@ -1,23 +1,21 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django import forms
 from django.core.exceptions import ValidationError
-from django.utils import timezone
 
 from app_client.models import Client
 from app_email.models import Email
 
 
 class EmailForm(forms.ModelForm):
+    """Form for email witch is using bootstrap classes widgets and validating some of the fields"""
     class Meta:
         model = Email
-        fields = ('subject', 'message', 'send_to_client', 'frequency', 'send_time', 'send_day')
+        fields = ('subject', 'message', 'send_to_client', 'frequency', 'send_datetime')
 
         widgets = {
-            'send_time': forms.TimeInput(
-                attrs={"type": "time", "class": "form-control"}),
-            'send_day': forms.DateInput(
-                attrs={"type": "date", "class": "form-control"}),
+            'send_datetime': forms.DateTimeInput(
+                attrs={"class": "form-control", 'type': 'datetime-local'})
         }
 
     def __init__(self, *args, **kwargs):
@@ -37,12 +35,34 @@ class EmailForm(forms.ModelForm):
         self.fields['send_to_client'].widget.attrs.update(
             {"class": "form-control"})
 
-        for field_name in self.fields:
-            self.fields[field_name].label = ""
-            self.fields[field_name].help_text = ""
+    def clean_send_datetime(self):
+        send_datetime = self.cleaned_data['send_datetime']
+        cur_datetime = datetime.now() + timedelta(hours=5)
+        if send_datetime.year < cur_datetime.year:
+            raise ValidationError("You can't send emails in the past.")
+        if send_datetime.year == cur_datetime.year and send_datetime.month < cur_datetime.month:
+            raise ValidationError("You can't send emails in the past.")
+        if (send_datetime.year == cur_datetime.year and send_datetime.month == cur_datetime.month
+                and send_datetime.day < cur_datetime.day):
+            raise ValidationError("You can't send emails in the past.")
+        if (send_datetime.year == cur_datetime.year and send_datetime.month == cur_datetime.month
+                and send_datetime.day == cur_datetime.day and send_datetime.hour < cur_datetime.hour):
+            raise ValidationError("You can't send emails in the past.")
+        if (send_datetime.year == cur_datetime.year and send_datetime.month == cur_datetime.month
+                and send_datetime.day == cur_datetime.day and send_datetime.hour == cur_datetime.hour
+                and send_datetime.minute < cur_datetime.minute):
+            raise ValidationError("You can't send emails in the past.")
+        return send_datetime
 
-    def clean_send_day(self):
-        send_day = self.cleaned_data['send_day']
-        if send_day < timezone.now().date():
-            raise ValidationError("День отправки не может быть в прошлом")
-        return send_day
+
+class ManagerEmailForm(forms.ModelForm):
+    class Meta:
+        model = Email
+        fields = ['is_active']
+        widgets = {
+            'is_active': forms.CheckboxInput()
+        }
+
+    def __init__(self, *args, **kwargs):
+        kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
