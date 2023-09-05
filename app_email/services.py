@@ -1,37 +1,79 @@
-from django.conf import settings
+from datetime import datetime, timedelta
+
 from django.core.mail import send_mail
-from django.core.management import call_command
+
+from app_email.models import Email
+from app_log.models import EmailLog
 
 
-def send_email(email) -> None:
+def send_email(email):
+    """This function is sending all crontab-jobs and also making logs with statistic"""
     try:
         send_mail(
-            subject=email['subject'],
-            message=email['message'],
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=email['recipient_list']
+            subject=email.subject,
+            message=email.message,
+            recipient_list=[client.email for client in email.send_to_client.all()],
+            from_email=None
         )
-    except Exception as e:
-        print(e)
+        if email.frequency == 'Once':
+            email.status = 'Finished'
+        else:
+            email.status = 'Launched'
+        email.save()
+    except Exception as error:
+        email_log = EmailLog.objects.create(
+            status='Failure', server_response=error, email=email)
+        email_log.save()
+    else:
+        email_log = EmailLog.objects.create(
+            status='Success', server_response='Sent successfully', email=email)
+        email_log.save()
 
 
-def cron_jobs_emails(obj):
-    clients = obj.send_to_client.all()
-    cron_mail = {
-        'subject': obj.subject,
-        'message': obj.message,
-        'recipient_list': [client.email for client in clients]
-    }
-    hour, minute = obj.send_time.strftime("%H:%M").split(":")
+def cronjob():
+    """This function is adding in crontab all emails so we can send them in proper time"""
+    emails = Email.objects.filter(is_active=True, status__in=['Created', 'Launched']).exclude(status='Finished')
+    cur_time = datetime.utcnow() + timedelta(hours=5)
 
-    if obj.frequency == 'once':
-        cron_schedule = f'{minute} {hour} {obj.send_day.day} {obj.send_day.month} *'
-        cron_function_path = f'app_email.services.send_email'
+    for email in emails:
+        if email.status == 'Created':
+            if email.frequency == 'Once':
+                conditions_once(email, cur_time)
+            elif email.frequency == 'Daily':
+                conditions_daily(email, cur_time)
+            elif email.frequency == 'Weekly':
+                conditions_weekly(email, cur_time)
+            elif email.frequency == 'Monthly':
+                conditions_monthly(email, cur_time)
+        elif email.status == 'Launched':
+            if email.frequency == 'Daily':
+                conditions_daily(email, cur_time)
+            elif email.frequency == 'Weekly':
+                conditions_weekly(email, cur_time)
+            elif email.frequency == 'Monthly':
+                conditions_monthly(email, cur_time)
 
-        cronjob = (cron_schedule, cron_function_path, [cron_mail])
-        print(cronjob)
-        settings.CRONJOBS.append(cronjob)
-        print(settings.CRONJOBS)
-        call_command('crontab', 'remove')
-        call_command('crontab', 'add')
-        call_command('crontab', 'show')
+
+def check_hour_minute(email, cur_time):
+    if email.send_datetime.hour == cur_time.hour:
+        if email.send_datetime.minute == cur_time.minute:
+            send_email(email)
+
+
+def conditions_once(email, cur_time):
+    if email.send_datetime.day == cur_time.day:
+        check_hour_minute(email, cur_time)
+
+
+def conditions_daily(email, cur_time):
+    check_hour_minute(email, cur_time)
+
+
+def conditions_weekly(email, cur_time):
+    if email.send_datetime.weekday() == cur_time.weekday():
+        check_hour_minute(email, cur_time)
+
+
+def conditions_monthly(email, cur_time):
+    if email.send_datetime.day == cur_time.day:
+        check_hour_minute(email, cur_time)

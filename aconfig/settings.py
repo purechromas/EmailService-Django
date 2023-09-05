@@ -30,7 +30,9 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+
 ALLOWED_HOSTS = []
+
 
 # Application definition
 
@@ -45,6 +47,8 @@ INSTALLED_APPS = [
     'app_user.apps.AppUserConfig',
     'app_email.apps.AppEmailConfig',
     'app_client.apps.AppClientConfig',
+    'app_log.apps.AppLogConfig',
+    'app_blog.apps.AppBlogConfig',
 ]
 
 MIDDLEWARE = [
@@ -112,7 +116,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru-ru'
 
 TIME_ZONE = 'UTC'
 
@@ -164,5 +168,5 @@ LOGOUT_REDIRECT_URL = reverse_lazy('user:login')
 LOGIN_REDIRECT_URL = reverse_lazy('home:home')
 
 CRONJOBS = [
-
+    ('* * * * *', 'app_email.services.cronjob'),
 ]

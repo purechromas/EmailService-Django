@@ -1,21 +1,18 @@
 from django.db import models
-
 from app_user.models import NULLABLE
 
 
 class Email(models.Model):
-    FREQUENCY_CHOICES = [
-        ('once', 'Единоразово'),
-        ('daily', 'Ежедневно'),
-        ('weekly', 'Еженедельно'),
-        ('monthly', 'Ежемесячно'),
-    ]
+    class Frequency(models.TextChoices):
+        ONCE = ('Once', 'Единоразово')
+        DAILY = ('Daily', 'Ежедневно')
+        WEEKLY = ('Weekly', 'Еженедельно')
+        MONTHLY = ('Monthly', 'Ежемесячно')
 
-    STATUS_CHOICES = [
-        ('created', 'создана'),
-        ('launched', 'запушена'),
-        ('finished', 'завершена'),
-    ]
+    class Status(models.TextChoices):
+        CREATED = ('Created', 'Создана')
+        LAUNCHED = ('Launched', 'Запушена')
+        FINISHED = ('Finished', ' Завершена')
 
     subject = models.CharField(
         max_length=255,
@@ -24,12 +21,12 @@ class Email(models.Model):
         verbose_name='сообщение')
     frequency = models.CharField(
         max_length=35,
-        choices=FREQUENCY_CHOICES,
+        choices=Frequency.choices,
         verbose_name='частота')
     status = models.CharField(
-        default=STATUS_CHOICES[0],
-        max_length=35,
-        choices=STATUS_CHOICES,
+        default=Status.CREATED,
+        max_length=30,
+        choices=Status.choices,
         verbose_name='статус')
     created_at = models.DateTimeField(
         auto_now_add=True,
@@ -37,10 +34,9 @@ class Email(models.Model):
     updated_at = models.DateTimeField(
         auto_now=True,
         verbose_name='время обновления')
-    send_time = models.TimeField(
-        verbose_name='время отправление')
-    send_day = models.DateField(
-        verbose_name='дата отправление')
+    send_datetime = models.DateTimeField(
+        **NULLABLE,
+        verbose_name='время и дата отправление')
     send_from_user = models.ForeignKey(
         to='app_user.User',
         on_delete=models.CASCADE,
@@ -50,6 +46,9 @@ class Email(models.Model):
         to='app_client.Client',
         related_name='client',
         verbose_name='получатель')
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='активен')
 
     def __str__(self):
         return f'Рассылка {self.subject})'

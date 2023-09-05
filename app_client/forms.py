@@ -1,4 +1,5 @@
 from django import forms
+from django.core.exceptions import ValidationError
 
 from app_client.models import Client
 
@@ -21,3 +22,11 @@ class ClientForm(forms.ModelForm):
         for field_name in self.fields:
             self.fields[field_name].label = ""
             self.fields[field_name].help_text = ""
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        if len(email) > 30:
+            raise ValidationError("Email can be max 30 symbols")
+        if '@' not in email:
+            raise ValidationError("It's not possible email without '@'.")
+        return email
